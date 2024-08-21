@@ -1,7 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"log"
+	"net/http"
+
+	"github.com/anilsaini81155/exchangeccurrency/router"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	r := router.SetupRouter()
+	log.Println("Server started on :8000")
+	log.Fatal(http.ListenAndServe(":8000", r))
 }
