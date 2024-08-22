@@ -56,6 +56,12 @@ func ValidateGetExchangePair(pair string) bool {
 }
 
 func StoreExchangeRate(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	var putrates PutRatesRequest
 	redisClient := internalredis.SetupRedis()
 	err := json.NewDecoder(r.Body).Decode(&putrates)
@@ -102,6 +108,12 @@ func StoreRate(client *redis.Client, currencyPair string, rate float64) {
 }
 
 func GetExchangeRate(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	exchange_pair := r.URL.Query().Get("exchange_pair")
 
 	if exchange_pair == "" {
@@ -139,4 +151,16 @@ func GetExchangeRates(client *redis.Client, currencyPair string) float64 {
 		log.Fatalf("Could not get exchange rate: %v", err)
 	}
 	return rate
+}
+
+func ExchangeRates(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		StoreExchangeRate(w, r)
+	case http.MethodGet:
+		GetExchangeRate(w, r)
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	}
+
 }

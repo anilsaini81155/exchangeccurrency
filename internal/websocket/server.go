@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -63,6 +64,7 @@ func (s *WebSocketServer) HandleWebSocket(w http.ResponseWriter, r *http.Request
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
 	})
+
 	if err != nil {
 		log.Printf("WebSocket accept error: %v", err)
 		return
@@ -75,12 +77,23 @@ func (s *WebSocketServer) HandleWebSocket(w http.ResponseWriter, r *http.Request
 	}()
 
 	for {
-		var msg string
+		var msg json.RawMessage
 		err := wsjson.Read(context.Background(), conn, &msg)
+
 		if err != nil {
 			log.Printf("WebSocket read error: %v", err)
 			break
 		}
+
+		log.Printf("Received: %s", msg)
+
+		// Echo the message back to the client
+		err = wsjson.Write(context.Background(), conn, msg)
+		if err != nil {
+			log.Printf("Failed to write message: %v", err)
+			break
+		}
+
 	}
 }
 

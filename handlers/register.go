@@ -13,6 +13,12 @@ import (
 
 // Register registers a new user
 func Register(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	var user models.User
 	var users = config.Users
 	json.NewDecoder(r.Body).Decode(&user)
