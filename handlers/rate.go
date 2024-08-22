@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/anilsaini81155/exchangeccurrency/internal/internalredis"
 	"github.com/go-redis/redis/v8"
 )
 
 var ctx = context.Background()
-
-var rdb *redis.Client
 
 type PutRatesRequest struct {
 	Username     string  `json:"username"`
@@ -31,15 +31,6 @@ var allowedPairs = map[string]bool{
 	"INR/USD": true,
 	"INR/EUR": true,
 	"USD/EUR": true,
-}
-
-func initRedis() {
-	rdb = redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-	if err := rdb.Ping(ctx).Err(); err != nil {
-		log.Fatal("Failed to connect to Redis:", err)
-	}
 }
 
 // ValidateExchangeRate validates that the required fields are present and correct
@@ -66,7 +57,7 @@ func ValidateGetExchangePair(pair string) bool {
 
 func StoreExchangeRate(w http.ResponseWriter, r *http.Request) {
 	var putrates PutRatesRequest
-	initRedis()
+	redisClient := internalredis.SetupRedis()
 	err := json.NewDecoder(r.Body).Decode(&putrates)
 
 	if err != nil {
@@ -80,7 +71,9 @@ func StoreExchangeRate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	StoreRate(rdb, putrates.Exchangepair, putrates.Exchangerate)
+	StoreRate(redisClient, putrates.Exchangepair, putrates.Exchangerate)
+
+	redisClient.Publish(ctx, "exchange_rates", fmt.Sprintf("%s: %.2f", putrates.Exchangepair, putrates.Exchangerate))
 
 	response := map[string]interface{}{
 		"exchange_rate":  putrates.Exchangerate,
@@ -122,9 +115,9 @@ func GetExchangeRate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	initRedis()
+	redisClient := internalredis.SetupRedis()
 
-	rate := GetExchangeRates(rdb, exchange_pair)
+	rate := GetExchangeRates(redisClient, exchange_pair)
 
 	var getratesresponse GetRatesResponse
 	getratesresponse.Exchangepair = exchange_pair
