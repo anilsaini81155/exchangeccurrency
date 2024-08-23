@@ -46,6 +46,7 @@ Response:
 
 This api requires exchange_pair,exchange_rate,username in the input request to store the data , without jwt token this api will not work.
 Once successfully updated the websocket client will get the msg.
+Acceptable values for excahnge pair => INR/USD,INR/EUR,USD/EUR
 
 curl --location 'http://localhost:8000/rate' \
 --header 'Content-Type: application/json' \
