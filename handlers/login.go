@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/anilsaini81155/exchangeccurrency/config"
@@ -28,9 +29,21 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var users = config.Users
 	json.NewDecoder(r.Body).Decode(&user)
 
+	err := ValidateLoginDetails(user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	storedPassword, exists := users[user.Username]
+
 	if !exists || !utils.CheckPasswordHash(user.Password, storedPassword["password"]) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	if storedPassword["user_type"] != "exhange_admin" {
+		http.Error(w, "Only admin can get the login token", http.StatusInternalServerError)
 		return
 	}
 
@@ -41,4 +54,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+func ValidateLoginDetails(loginfields models.User) error {
+
+	if loginfields.Username == "" {
+		return errors.New("username is required")
+	}
+
+	if loginfields.Password == "" {
+		return errors.New("password is required")
+	}
+
+	return nil
 }
