@@ -7,6 +7,7 @@ import (
 	"github.com/anilsaini81155/exchangeccurrency/handlers"
 	"github.com/anilsaini81155/exchangeccurrency/internal/internalredis"
 	"github.com/anilsaini81155/exchangeccurrency/internal/websocket"
+	"github.com/anilsaini81155/exchangeccurrency/middleware"
 )
 
 func main() {
@@ -18,11 +19,11 @@ func main() {
 	go wsServer.Run()
 	go wsServer.RedisSubscriber(redisClient)
 
-	http.HandleFunc("/register", handlers.Register)
+	// http.HandleFunc("/register", handlers.Register)
 	http.HandleFunc("/login", handlers.Login)
-	http.HandleFunc("/user", handlers.GetUser)
+	// http.HandleFunc("/user", handlers.GetUser)
 	// router.HandleFunc("/rate", handlers.StoreExchangeRate).Methods("POST").Handler(middleware.JWTAuth(http.HandlerFunc(handlers.StoreExchangeRate)))
-	http.HandleFunc("/rate", handlers.ExchangeRates)
+	http.Handle("/rate", middleware.JWTAuth(http.HandlerFunc(handlers.ExchangeRates)))
 	http.HandleFunc("/ws", wsServer.HandleWebSocket)
 
 	log.Println("Server started on :8000")
